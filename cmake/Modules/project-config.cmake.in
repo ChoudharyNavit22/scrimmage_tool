@@ -1,0 +1,13 @@
+# - Config file for the FooBar package
+# It defines the following variables
+#  new-scrimmage-plugin_INCLUDE_DIRS - include directories for project new-scrimmage-plugin
+#  new-scrimmage-plugin_LIBRARIES    - libraries to link against
+
+# Compute paths
+get_filename_component(PROJECT_CMAKE_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
+
+## Our library dependencies (contains definitions for IMPORTED targets)
+include("${PROJECT_CMAKE_DIR}/@PROJECT_NAME@-targets.cmake")
+
+set(new-scrimmage-plugin_INCLUDE_DIRS "@PROJECT_INCLUDE_DIRS@")
+set(new-scrimmage-plugin_LIBRARIES "@PROJECT_LIBS@")
