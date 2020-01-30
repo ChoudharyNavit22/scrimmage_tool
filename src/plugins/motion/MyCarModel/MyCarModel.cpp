@@ -40,7 +40,9 @@
 
 #include <boost/algorithm/clamp.hpp>
 
-namespace sc = scrimmage;
+using boost::algorithm::clamp;
+
+// namespace sc = scrimmage;
 
 REGISTER_PLUGIN(scrimmage::MotionModel,
                 scrimmage::motion::MyCarModel,

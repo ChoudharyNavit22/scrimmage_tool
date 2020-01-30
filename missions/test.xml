@@ -1,13 +1,15 @@
 <?xml version="1.0"?>
 <?xml-stylesheet type="text/xsl" href="http://gtri.gatech.edu"?>
 <runscript xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    name="Car Movement">
+    name="Test">
 
   <run start="0.0" end="100" dt="0.1"
        time_warp="10"
        enable_gui="true"
        network_gui="false"
        start_paused="true"/>
+
+<camera focal_point="0,0,0" mode="free" pos="0,0,100" show_fps="true" />
 
   <stream_port>50051</stream_port>
   <stream_ip>localhost</stream_ip>
@@ -22,8 +24,10 @@
   <gui_update_period>10</gui_update_period> <!-- milliseconds -->
 
   <plot_tracks>false</plot_tracks>
-  <output_type weights_file="unity">all</output_type>
+  <output_type>all</output_type>
   <show_plugins>false</show_plugins>
+
+  <metrics>SimpleCollisionMetrics</metrics>
 
   <log_dir>~/.scrimmage/logs</log_dir>
 
@@ -33,10 +37,25 @@
   <show_origin>true</show_origin>
   <origin_length>10</origin_length>
 
+  <!-- <entity_interaction>SimpleCollision</entity_interaction> -->
 
-  <!-- uncomment "seed" and use integer for deterministic results -->
-  <!-- <seed>2147483648</seed> -->
+    <entity_interaction enable_collision_detection="false"
+                      show_rays="true"
+                      publish_on_local_networks="true"
+                      pcl_network_name="LocalNetwork"
+                      pcl_topic_name="pointcloud"
+                      prepend_pcl_topic_with_id="false"
+                      >BulletCollision</entity_interaction>
+
+    <entity_interaction>MapGen2D</entity_interaction>
+
+
+  <network>GlobalNetwork</network>
+
   <network>LocalNetwork</network>
+  
+  <!-- uncomment "seed" and use integer for deterministic results -->
+  <seed>2147483648</seed>
 
 <!-- ========================== TEAM 1 ========================= -->
   <entity>
@@ -45,22 +64,77 @@
     <count>1</count>
     <health>1</health>
 
-    <variance_x>20</variance_x>
-    <variance_y>20</variance_y>
-    <variance_z>0</variance_z>
-    
-    <x>0</x>
-    <y>30</y>
+    <variance_x>50</variance_x>
+    <variance_y>50</variance_y>
+    <variance_z>50</variance_z>
+
+    <sensor xyz="0 0 0.1" rpy="0 0 0"
+            angle_res_horiz="1" num_rays_horiz="360">RayTrace</sensor>
+
+    <x>3</x>
+    <y>1.5</y>
     <z>0.42</z>
-    <heading>-45</heading>            
+    <heading>0</heading>          
     <controller>MyCarController</controller>
-    <motion_model>MyCarModel</motion_model>
+    <motion_model length="2">MyCarModel</motion_model>
     <visual_model>volkswagen</visual_model>
     
-    <autonomy>Straight</autonomy>    
+    <autonomy>AvoidWallsNew</autonomy>
+
+    <!-- <autonomy network_name="LocalNetwork" topic_Name="WaypointList"
+              mode="racetrack"
+              show_waypoints="true"
+              waypoints="[ XYZ 0 100 10 0 0 0 0 5 -1 ]"
+              >WaypointGenerator</autonomy> -->
+
+    <autonomy waypointlist_network="LocalNetwork"
+              waypoint_network="LocalNetwork">WaypointDispatcher</autonomy>
+
+    <autonomy network_name="LocalNetwork" topic_Name="WaypointList"
+              waypoint="XYZ 0 100 10 0 0 0 0 5 -1"
+              >TravelToTarget</autonomy>
+
+    <autonomy show_shapes="true" max_speed="${max_speed=5}" behaviors="
+      [ AvoidEntityMS show_shapes='false' gain='${MS_gain=1.0}' sphere_of_influence='4' minimum_range='2' ]
+       [ MoveToGoalMS gain='1.0' show_shapes='true' use_initial_heading='true' goal='200,200,-100']"
+              >MotorSchemas</autonomy>  
     
   </entity> 
 
 <!-- ========================== TEAM 1 ========================= --> 
+
+
+<!-- ========================== TEAM 2 ========================= --> 
+
+ <!-- <entity>
+   <team_id>2</team_id>
+   <color>255 0 0</color>
+   <count>1</count>
+   <health>1</health>
+   <radius>2</radius>
+
+   <variance_x>20</variance_x>
+   <variance_y>20</variance_y>
+   <variance_z>20</variance_z>
+
+   <x>50</x>
+   <y>0</y>
+   <z>200</z>
+
+   <heading>180</heading>
+   <altitude>200</altitude>
+   <controller>SimpleAircraftControllerPID</controller>
+   <motion_model>SimpleAircraft</motion_model>
+   <visual_model>zephyr-red</visual_model>
+   <autonomy>PlayerFollowBehavior</autonomy>
+   <base>
+     <latitude>35.719961</latitude>
+     <longitude>-120.767304</longitude>
+     <altitude>300</altitude>
+     <radius>25</radius>
+   </base>
+ </entity> -->
+
+<!-- ========================== TEAM 2 ========================= --> 
 
 </runscript>
