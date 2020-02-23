@@ -36,6 +36,12 @@
 #include <scrimmage/entity/Entity.h>
 #include <scrimmage/math/State.h>
 #include <scrimmage/parse/ParseUtils.h>
+
+#include <scrimmage/msgs/Event.pb.h>
+#include <scrimmage/pubsub/Message.h>
+#include <scrimmage/pubsub/Subscriber.h>
+#include <scrimmage/pubsub/Publisher.h>
+#include <scrimmage/sensor/Sensor.h>
 	
 
 // Include the Shape header and some protobuf helper functions
@@ -55,7 +61,7 @@ namespace scrimmage {
 namespace autonomy {
 
 void PlayerFollowBehavior::init(std::map<std::string, std::string> &params) {
-     double initial_speed = sc::get<double>("initial_speed", params, 21);
+     double initial_speed = sc::get<double>("initial_speed", params, 15);
      desired_alt_idx_ = vars_.declare(VariableIO::Type::desired_altitude, VariableIO::Direction::Out);
      desired_speed_idx_ = vars_.declare(VariableIO::Type::desired_speed, VariableIO::Direction::Out);
      desired_heading_idx_ = vars_.declare(VariableIO::Type::desired_heading, VariableIO::Direction::Out);
@@ -71,6 +77,7 @@ bool PlayerFollowBehavior::step_autonomy(double t, double dt) {
      // distance to entity, save the ID of the entity that is closest.
      int follow_id_ = -1;
      double min_dist = std::numeric_limits<double>::infinity();
+     //bool first_interact = 0;
      for (auto &kv : *contacts_) {
 
          int contact_id = kv.first;
@@ -80,6 +87,14 @@ bool PlayerFollowBehavior::step_autonomy(double t, double dt) {
          if (contact.id().team_id() == parent_->id().team_id()) {
              continue;
          }
+
+        //  if(!first_interact){
+        //     // Create the GenerateEntity message
+        //     auto msg = std::make_shared<Message<scrimmage_msgs::GenerateEntity>>();
+        //     sc::set(msg->data.mutable_state(), contact.id().team_id()); // Copy the new state
+        //     publish(msg); // Publish the GenerateEntity message
+        //     first_interact = 1;
+        //  }
 
          // Calculate distance to entity
          double dist = (contact.state()->pos() - state_->pos()).norm();

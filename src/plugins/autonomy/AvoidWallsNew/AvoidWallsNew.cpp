@@ -39,6 +39,14 @@
 #include <scrimmage/plugins/sensor/RayTrace/RayTrace.h>
 #include <scrimmage/pubsub/Subscriber.h>
 
+#include <iostream>
+#include <limits>
+#include <typeinfo>
+#include <vector>
+
+using std::cout;
+using std::endl;
+
 namespace sc = scrimmage;
 
 REGISTER_PLUGIN(scrimmage::Autonomy,
@@ -75,7 +83,7 @@ bool AvoidWallsNew::step_autonomy(double t, double dt) {
             all_close_points = false;
         }
     }
-
+        // printf("%s \n", !points.empty()?"true":"false");
     if (!points.empty()) {
         std::vector<Eigen::Vector3d> O_vecs;
         for (Eigen::Vector3d &p : points) {

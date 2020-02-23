@@ -59,6 +59,7 @@ void TravelToTarget::init(std::map<std::string, std::string> &params) {
     waypoint_status_ = str2container(params["waypoint"], " ", waypoint_);
 
     waypoint_list_pub_ = advertise("LocalNetwork", "WaypointList");
+
 }
 
 bool TravelToTarget::step_autonomy(double t, double dt) {
