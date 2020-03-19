@@ -42,14 +42,26 @@
 #include <scrimmage/pubsub/Subscriber.h>
 #include <scrimmage/pubsub/Publisher.h>
 #include <scrimmage/sensor/Sensor.h>
+#include <scrimmage/math/StateWithCovariance.h>
+#include <scrimmage/math/Angles.h>
+
 	
 
 // Include the Shape header and some protobuf helper functions
 #include <scrimmage/proto/Shape.pb.h>         // scrimmage_proto::Shape
 #include <scrimmage/proto/ProtoConversions.h> // scrimmage::set()
 
+#include <iostream>
+#include <string>
+#include <cmath>
+#include <cfloat>
+#include <vector>
+#include <array>
 
 #include <limits>
+
+using std::cout;
+using std::endl;
 
 namespace sc = scrimmage;
 
@@ -69,6 +81,15 @@ void PlayerFollowBehavior::init(std::map<std::string, std::string> &params) {
      vars_.output(desired_speed_idx_, initial_speed);
      vars_.output(desired_alt_idx_, state_->pos()(2));
      vars_.output(desired_heading_idx_, state_->quat().yaw());
+
+    auto state_cb = [&](auto &msg) {
+        vehicle_broadcast_ = msg->data;
+        // for (int i = 0; i < 3; i++) {
+        //     cout << "position: "<< i << " ===> "<< vehicle_broadcast_.pos()(i) << endl;
+        // }
+    };
+
+    subscribe<sc::State>("GlobalNetwork", "VehicleLocationBroadcaster", state_cb);
 
 }
 
@@ -120,7 +141,7 @@ bool PlayerFollowBehavior::step_autonomy(double t, double dt) {
          vars_.output(desired_heading_idx_, heading);
 
          // Match entity's altitude
-         vars_.output(desired_alt_idx_, ent_state->pos()(2));
+         vars_.output(desired_alt_idx_, 10);
      }
 
      return true;

@@ -39,6 +39,13 @@
 #include <scrimmage/plugins/sensor/RayTrace/RayTrace.h>
 #include <scrimmage/pubsub/Subscriber.h>
 
+	
+
+// Include the Shape header and some protobuf helper functions
+#include <scrimmage/proto/Shape.pb.h>         // scrimmage_proto::Shape
+#include <scrimmage/proto/ProtoConversions.h> // scrimmage::set()
+
+
 #include <iostream>
 #include <limits>
 #include <typeinfo>
@@ -69,7 +76,34 @@ void AvoidWallsNew::init(std::map<std::string, std::string> &params) {
     speed_idx_ = vars_.declare(VariableIO::Type::desired_speed, VariableIO::Direction::Out);
 
     vars_.output(heading_idx_, state_->quat().yaw());
-    vars_.output(speed_idx_, initial_speed);
+    vars_.output(speed_idx_, initial_speed);    	
+
+    // // Create a shape instance
+    // auto wall = std::make_shared<scrimmage_proto::Shape>();
+
+    // // Set the color and opacity
+    // sc::set(wall->mutable_color(), 255, 0, 0); // r, g, b
+    // wall->set_opacity(1.0);
+
+    // // The shape will be removed after five simulation steps
+    // // wall->set_persistent(false);
+    // // wall->set_ttl(5);
+
+    // // Set the cube's center position to (10, 10, 10)
+    // sc::set(wall->mutable_cuboid()->mutable_center(), Eigen::Vector3d(0, 25, 2.5));
+
+    // // Set the x, y, and z lengths of the cuboid (3x3x3) (meters)
+    // wall->mutable_cuboid()->set_x_length(0.1);
+    // wall->mutable_cuboid()->set_y_length(50);
+    // wall->mutable_cuboid()->set_z_length(5);
+
+    // // Set the cube's rotation to zero:
+    // sc::Quaternion quat(0, 0, 0); // roll, pitch, yaw (radians)
+    // sc::set(wall->mutable_cuboid()->mutable_quat(), quat);
+
+    // // Draw the shape in the viewer
+    // draw_shape(wall);
+
 }
 
 bool AvoidWallsNew::step_autonomy(double t, double dt) {
@@ -83,7 +117,6 @@ bool AvoidWallsNew::step_autonomy(double t, double dt) {
             all_close_points = false;
         }
     }
-        // printf("%s \n", !points.empty()?"true":"false");
     if (!points.empty()) {
         std::vector<Eigen::Vector3d> O_vecs;
         for (Eigen::Vector3d &p : points) {

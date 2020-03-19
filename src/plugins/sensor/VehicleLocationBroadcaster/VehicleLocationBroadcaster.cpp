@@ -30,7 +30,7 @@
  *
  */
 
-#include <new-scrimmage-plugin/plugins/sensor/MyNoisyState/MyNoisyState.h>
+#include <new-scrimmage-plugin/plugins/sensor/VehicleLocationBroadcaster/VehicleLocationBroadcaster.h>
 
 #include <scrimmage/plugin_manager/RegisterPlugin.h>
 #include <scrimmage/entity/Entity.h>
@@ -51,49 +51,32 @@ using std::endl;
 namespace sc = scrimmage;
 
 REGISTER_PLUGIN(scrimmage::Sensor,
-                scrimmage::sensor::MyNoisyState,
-                MyNoisyState_plugin)
+                scrimmage::sensor::VehicleLocationBroadcaster,
+                VehicleLocationBroadcaster_plugin)
 
 namespace scrimmage {
 namespace sensor {
 
-MyNoisyState::MyNoisyState() {
+VehicleLocationBroadcaster::VehicleLocationBroadcaster() {
 }
 
-void MyNoisyState::init(std::map<std::string, std::string> &params) {
-    // Use the same generator as the parent so that the simulation is
-    // completely deterministic with respect to the simulation seed.
-    // gener_ = parent_->random()->gener();
-
-    // // Create three independent gaussian noise generators. They will use the
-    // // same generator seed.
-    // for (int i = 0; i < 3; i++) {
-    //     std::string tag_name = "pos_noise_" + std::to_string(i);
-    //     std::vector<double> vec;
-    //     bool status = sc::get_vec(tag_name, params, " ", vec, 2);
-    //     if (status) {
-    //         pos_noise_.push_back(parent_->random()->make_rng_normal(vec[0], vec[1]));
-    //     } else {
-    //         pos_noise_.push_back(parent_->random()->make_rng_normal(0, 1));
-    //     }
-    // }
-
-    pub_ = advertise("GlobalNetwork", "MyNoisyState");
+void VehicleLocationBroadcaster::init(std::map<std::string, std::string> &params) {
+    pub_ = advertise("GlobalNetwork", "VehicleLocationBroadcaster");
 }
 
-bool MyNoisyState::step() {
+bool VehicleLocationBroadcaster::step() {
     // Make a copy of the current state
-    //sc::State ns = *(parent_->state_truth());
+    sc::State ns = *(parent_->state_truth());
 
     // Create a message to hold the modified state
-    auto msg = std::make_shared<sc::Message<std::string>>();
+    auto msg = std::make_shared<sc::Message<sc::State>>();
 
     // Add noise to the three scalars in the 3D position vector.
     // for (int i = 0; i < 3; i++) {
     //     msg->data.pos()(i) = ns.pos()(i) + (*pos_noise_[i])(*gener_);
     // }
 
-    msg->data = "2";
+    msg->data = ns;
 
     // Return the sensor message.
     pub_->publish(msg);

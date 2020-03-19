@@ -30,32 +30,34 @@
  *
  */
 
-#ifndef INCLUDE_NEW_SCRIMMAGE_PLUGIN_PLUGINS_AUTONOMY_PLAYERFOLLOWBEHAVIOR_PLAYERFOLLOWBEHAVIOR_H_
-#define INCLUDE_NEW_SCRIMMAGE_PLUGIN_PLUGINS_AUTONOMY_PLAYERFOLLOWBEHAVIOR_PLAYERFOLLOWBEHAVIOR_H_
-#include <scrimmage/autonomy/Autonomy.h>
+#ifndef INCLUDE_NEW_SCRIMMAGE_PLUGIN_PLUGINS_SENSOR_VEHICLELOCATIONBROADCASTER_VEHICLELOCATIONBROADCASTER_H_
+#define INCLUDE_NEW_SCRIMMAGE_PLUGIN_PLUGINS_SENSOR_VEHICLELOCATIONBROADCASTER_VEHICLELOCATIONBROADCASTER_H_
+
+#include <scrimmage/sensor/Sensor.h>
+#include <scrimmage/entity/Entity.h>
 #include <scrimmage/entity/Contact.h>
-#include <scrimmage/math/State.h>
+#include <scrimmage/pubsub/Publisher.h>
 
-#include <Eigen/Dense>
-
+#include <random>
+#include <vector>
 #include <map>
 #include <string>
-#include <memory>
 
 namespace scrimmage {
-namespace autonomy {
-class PlayerFollowBehavior : public scrimmage::Autonomy {
+namespace sensor {
+class VehicleLocationBroadcaster : public scrimmage::Sensor {
  public:
+    VehicleLocationBroadcaster();
     void init(std::map<std::string, std::string> &params) override;
-    bool step_autonomy(double t, double dt) override;
+    bool step() override;
 
  protected:
-     int desired_alt_idx_ = 0;
-     int desired_speed_idx_ = 0;
-     int desired_heading_idx_ = 0;
-     int min_dist = 0;
-     scrimmage::State vehicle_broadcast_;
+    std::shared_ptr<std::default_random_engine> gener_;
+    std::vector<std::shared_ptr<std::normal_distribution<double>>> pos_noise_;
+
+    PublisherPtr pub_;
+ private:
 };
-} // namespace autonomy
+} // namespace sensor
 } // namespace scrimmage
-#endif // INCLUDE_NEW_SCRIMMAGE_PLUGIN_PLUGINS_AUTONOMY_PLAYERFOLLOWBEHAVIOR_PLAYERFOLLOWBEHAVIOR_H_
+#endif // INCLUDE_NEW_SCRIMMAGE_PLUGIN_PLUGINS_SENSOR_VEHICLELOCATIONBROADCASTER_VEHICLELOCATIONBROADCASTER_H_
