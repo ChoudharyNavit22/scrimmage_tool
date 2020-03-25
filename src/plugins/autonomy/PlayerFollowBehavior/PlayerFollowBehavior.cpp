@@ -31,7 +31,6 @@
  */
 
 #include <new-scrimmage-plugin/plugins/autonomy/PlayerFollowBehavior/PlayerFollowBehavior.h>
-
 #include <scrimmage/plugin_manager/RegisterPlugin.h>
 #include <scrimmage/entity/Entity.h>
 #include <scrimmage/math/State.h>
@@ -45,8 +44,6 @@
 #include <scrimmage/math/StateWithCovariance.h>
 #include <scrimmage/math/Angles.h>
 
-	
-
 // Include the Shape header and some protobuf helper functions
 #include <scrimmage/proto/Shape.pb.h>         // scrimmage_proto::Shape
 #include <scrimmage/proto/ProtoConversions.h> // scrimmage::set()
@@ -57,11 +54,15 @@
 #include <cfloat>
 #include <vector>
 #include <array>
+#include <thread>
+#include <mutex>
 
 #include <limits>
 
 using std::cout;
 using std::endl;
+std::mutex mtx;
+int initiated_drone = 0;
 
 namespace sc = scrimmage;
 
@@ -81,6 +82,17 @@ void PlayerFollowBehavior::init(std::map<std::string, std::string> &params) {
      vars_.output(desired_speed_idx_, initial_speed);
      vars_.output(desired_alt_idx_, state_->pos()(2));
      vars_.output(desired_heading_idx_, state_->quat().yaw());
+     mtx.lock();
+     drone_id = initiated_drone;
+     if(initiated_drone>0){
+         initiated_drone = initiated_drone * -1;
+     }
+     else if (initiated_drone < 0 ) { 
+        initiated_drone = initiated_drone * -1;
+        initiated_drone++;
+    }
+    else if (initiated_drone == 0 ) {initiated_drone = 1;}
+     mtx.unlock();
 
     auto state_cb = [&](auto &msg) {
         vehicle_broadcast_ = msg->data;

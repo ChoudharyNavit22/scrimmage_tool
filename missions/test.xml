@@ -37,7 +37,7 @@
   <show_origin>true</show_origin>
   <origin_length>10</origin_length>
 
-  <!-- <entity_interaction>SimpleCollision</entity_interaction> -->
+  <entity_interaction enable_team_collisions="false">SimpleCollision</entity_interaction>
 
     <entity_interaction enable_collision_detection="false"
                       show_rays="true"
@@ -64,9 +64,9 @@
     <count>1</count>
     <health>1</health>
 
-    <variance_x>50</variance_x>
-    <variance_y>50</variance_y>
-    <variance_z>50</variance_z>
+    <variance_x>5</variance_x>
+    <variance_y>5</variance_y>
+    <variance_z>0</variance_z>
 
     <sensor xyz="0 0 0.1" rpy="0 0 0"
             angle_res_horiz="1" num_rays_horiz="360">RayTrace</sensor>
@@ -79,7 +79,7 @@
     <motion_model length="2">MyCarModel</motion_model>
     <visual_model>volkswagen</visual_model>
 
-    <autonomy>AvoidWallsNew</autonomy>
+    <!-- <autonomy>AvoidWallsNew</autonomy> -->
     <sensor>VehicleLocationBroadcaster</sensor>
     <!-- <autonomy>Straight</autonomy> -->
 
@@ -98,7 +98,7 @@
               >WaypointGenerator</autonomy>
 
     <autonomy show_shapes="true" max_speed="5" behaviors="
-      [ AvoidEntityMS show_shapes='true' avoid_non_team='true' gain='${MS_gain=1.0}' sphere_of_influence='10' minimum_range='2' ]
+      [ AvoidEntityMS show_shapes='true' avoid_non_team='true' sphere_of_influence='5' minimum_range='2' ]
        [ MoveToGoalMS gain='1.0' show_shapes='true' goal='100,50,0']"
               >MotorSchemas</autonomy>  
     
@@ -146,7 +146,7 @@
  <entity>
    <team_id>2</team_id>
    <color>255 0 0</color>
-   <count>1</count>
+   <count>5</count>
    <health>1</health>
    <radius>2</radius>
 

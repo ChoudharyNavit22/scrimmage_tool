@@ -55,6 +55,7 @@ class PlayerFollowBehavior : public scrimmage::Autonomy {
      int desired_heading_idx_ = 0;
      int min_dist = 0;
      scrimmage::State vehicle_broadcast_;
+     int drone_id = 0;
 };
 } // namespace autonomy
 } // namespace scrimmage
