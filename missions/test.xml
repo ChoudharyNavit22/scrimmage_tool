@@ -75,8 +75,8 @@
     <y>0</y>
     <z>0</z>
     <heading>0</heading>          
-    <controller>MyCarController</controller>
-    <motion_model length="2">MyCarModel</motion_model>
+    <controller>UnicyclePID</controller>
+    <motion_model speed_max="16">Unicycle3D</motion_model>
     <visual_model>volkswagen</visual_model>
 
     <!-- <autonomy>AvoidWallsNew</autonomy> -->
@@ -95,11 +95,11 @@
                         [ XYZ 0   0 100 0 0 0 0 5 -1 ]
                         [ XYZ 0   0   0 0 0 0 0 5 -1 ]
                         "
-              >WaypointGenerator</autonomy>
+              >WaypointGenerator</autonomy> 
 
-    <autonomy show_shapes="true" max_speed="5" behaviors="
+    <autonomy show_shapes="true" max_speed="${max_speed=16} " behaviors="
       [ AvoidEntityMS show_shapes='true' avoid_non_team='true' sphere_of_influence='5' minimum_range='2' ]
-       [ MoveToGoalMS gain='1.0' show_shapes='true' goal='100,50,0']"
+       [ MoveToGoalMS gain='1.0' show_shapes='true' goal='200,100,0']"
               >MotorSchemas</autonomy>  
     
   </entity> 
@@ -146,7 +146,7 @@
  <entity>
    <team_id>2</team_id>
    <color>255 0 0</color>
-   <count>5</count>
+   <count>1</count>
    <health>1</health>
    <radius>2</radius>
 
@@ -154,9 +154,9 @@
    <variance_y>20</variance_y>
    <variance_z>20</variance_z>
 
-   <x>50</x>
+   <x>-40</x>
    <y>0</y>
-   <z>200</z>
+   <z>10</z>
 
    <heading>5</heading>
    <altitude>10</altitude>
@@ -168,7 +168,7 @@
    <base>
      <latitude>35.719961</latitude>
      <longitude>-120.767304</longitude>
-     <altitude>300</altitude>
+     <altitude>10</altitude>
      <radius>25</radius>
    </base>
  </entity>
