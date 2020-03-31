@@ -96,9 +96,10 @@ void PlayerFollowBehavior::init(std::map<std::string, std::string> &params) {
 
     auto state_cb = [&](auto &msg) {
         vehicle_broadcast_ = msg->data;
-        // for (int i = 0; i < 3; i++) {
-        //     cout << "position: "<< i << " ===> "<< vehicle_broadcast_.pos()(i) << endl;
-        // }
+        std::cout << "Vehicle broadcast data" << vehicle_broadcast_ << endl;
+         for (int i = 0; i < 3; i++) {
+             cout << "position: "<< i << " ===> "<< vehicle_broadcast_.pos()(i) << endl;
+         }
     };
 
     subscribe<sc::State>("GlobalNetwork", "VehicleLocationBroadcaster", state_cb);
@@ -155,8 +156,6 @@ bool PlayerFollowBehavior::step_autonomy(double t, double dt) {
          // Match entity's altitude
          vars_.output(desired_alt_idx_, 10);
 
-         Eigen::Vector3d v = Eigen::Vector3d(0,0,0);
-         vars_.output(desired_speed_idx_, v.norm());
      }
 
      return true;

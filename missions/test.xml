@@ -76,7 +76,7 @@
     <z>0</z>
     <heading>0</heading>          
     <controller>UnicyclePID</controller>
-    <motion_model speed_max="16">Unicycle3D</motion_model>
+    <motion_model speed_max="9">Unicycle3D</motion_model>
     <visual_model>volkswagen</visual_model>
 
     <!-- <autonomy>AvoidWallsNew</autonomy> -->
@@ -90,14 +90,14 @@
               mode="racetrack"
               show_waypoints="true"
               waypoints="
-                        [ XYZ 0 100   0 0 0 0 0 5 -1 ]
-                        [ XYZ 0 100 100 0 0 0 0 5 -1 ]
-                        [ XYZ 0   0 100 0 0 0 0 5 -1 ]
+                        [ XYZ 0 200   0 0 0 0 0 5 -1 ]
+                        [ XYZ 0 200 200 0 0 0 0 5 -1 ]
+                        [ XYZ 0   0 200 0 0 0 0 5 -1 ]
                         [ XYZ 0   0   0 0 0 0 0 5 -1 ]
                         "
               >WaypointGenerator</autonomy> 
 
-    <autonomy show_shapes="true" max_speed="${max_speed=16} " behaviors="
+    <autonomy show_shapes="true" max_speed="${max_speed=9} " behaviors="
       [ AvoidEntityMS show_shapes='true' avoid_non_team='true' sphere_of_influence='5' minimum_range='2' ]
        [ MoveToGoalMS gain='1.0' show_shapes='true' goal='200,100,0']"
               >MotorSchemas</autonomy>  
@@ -146,7 +146,7 @@
  <entity>
    <team_id>2</team_id>
    <color>255 0 0</color>
-   <count>1</count>
+   <count>2</count>
    <health>1</health>
    <radius>2</radius>
 
@@ -169,7 +169,7 @@
      <latitude>35.719961</latitude>
      <longitude>-120.767304</longitude>
      <altitude>10</altitude>
-     <radius>25</radius>
+     <radius>2</radius>
    </base>
  </entity>
 
