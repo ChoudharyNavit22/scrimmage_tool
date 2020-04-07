@@ -146,22 +146,22 @@
  <entity>
    <team_id>2</team_id>
    <color>255 0 0</color>
-   <count>2</count>
+   <count>3</count>
    <health>1</health>
-   <radius>2</radius>
+   <radius>10</radius>
 
-   <variance_x>20</variance_x>
-   <variance_y>20</variance_y>
-   <variance_z>20</variance_z>
+   <variance_x>0</variance_x>
+   <variance_y>10</variance_y>
+   <variance_z>0</variance_z>
 
-   <x>-40</x>
+   <x>-10</x>
    <y>0</y>
    <z>10</z>
 
-   <heading>5</heading>
+   <heading>0</heading>
    <altitude>10</altitude>
    <controller>SimpleAircraftControllerPID</controller>
-   <motion_model>SimpleAircraft</motion_model>
+   <motion_model initial_speed="10" >SimpleAircraft</motion_model>
    <sensor>MyNoisyState</sensor>
    <visual_model>zephyr-red</visual_model>
    <autonomy>PlayerFollowBehavior</autonomy>
@@ -169,7 +169,7 @@
      <latitude>35.719961</latitude>
      <longitude>-120.767304</longitude>
      <altitude>10</altitude>
-     <radius>2</radius>
+     <radius>10</radius>
    </base>
  </entity>
 

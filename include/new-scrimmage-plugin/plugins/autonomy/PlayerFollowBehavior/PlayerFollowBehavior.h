@@ -41,6 +41,7 @@
 #include <map>
 #include <string>
 #include <memory>
+namespace sc = scrimmage;
 
 namespace scrimmage {
 namespace autonomy {
@@ -56,6 +57,8 @@ class PlayerFollowBehavior : public scrimmage::Autonomy {
      int min_dist = 0;
      scrimmage::State vehicle_broadcast_;
      int drone_id = 0;
+     std::string droneId_;
+     
 };
 } // namespace autonomy
 } // namespace scrimmage

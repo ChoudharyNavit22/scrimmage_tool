@@ -63,6 +63,9 @@ using std::cout;
 using std::endl;
 std::mutex mtx;
 int initiated_drone = 0;
+scrimmage::State masterDrone;
+scrimmage::State car;
+int counter = 15, counter2 = -15;
 
 namespace sc = scrimmage;
 
@@ -74,15 +77,13 @@ namespace scrimmage {
 namespace autonomy {
 
 void PlayerFollowBehavior::init(std::map<std::string, std::string> &params) {
+    
      double initial_speed = sc::get<double>("initial_speed", params, 15);
      desired_alt_idx_ = vars_.declare(VariableIO::Type::desired_altitude, VariableIO::Direction::Out);
      desired_speed_idx_ = vars_.declare(VariableIO::Type::desired_speed, VariableIO::Direction::Out);
      desired_heading_idx_ = vars_.declare(VariableIO::Type::desired_heading, VariableIO::Direction::Out);
 
-     vars_.output(desired_speed_idx_, initial_speed);
-     vars_.output(desired_alt_idx_, state_->pos()(2));
-     vars_.output(desired_heading_idx_, state_->quat().yaw());
-     mtx.lock();
+    mtx.lock();
      drone_id = initiated_drone;
      if(initiated_drone>0){
          initiated_drone = initiated_drone * -1;
@@ -93,24 +94,33 @@ void PlayerFollowBehavior::init(std::map<std::string, std::string> &params) {
     }
     else if (initiated_drone == 0 ) {initiated_drone = 1;}
      mtx.unlock();
+    
+     vars_.output(desired_speed_idx_, initial_speed);
+     vars_.output(desired_alt_idx_, state_->pos()(2));
+     vars_.output(desired_heading_idx_, state_->quat().yaw());
+     
+     if(drone_id < 0) {
+         std::cout << "initial setup for -ve drones " << endl;;
+        state_->pos()(0) = -15;
+        state_->pos()(1) = -3;
 
-    auto state_cb = [&](auto &msg) {
-        vehicle_broadcast_ = msg->data;
-        std::cout << "Vehicle broadcast data" << vehicle_broadcast_ << endl;
-         for (int i = 0; i < 3; i++) {
-             cout << "position: "<< i << " ===> "<< vehicle_broadcast_.pos()(i) << endl;
-         }
-    };
-
-    subscribe<sc::State>("GlobalNetwork", "VehicleLocationBroadcaster", state_cb);
+    } else if(drone_id > 0){
+                 std::cout << "initial setup for +ve drones " << endl;
+        state_->pos()(0) = -15;
+        state_->pos()(1) = 3;
+    }
 
 }
 
 bool PlayerFollowBehavior::step_autonomy(double t, double dt) {
+    
     // Find nearest entity on other team. Loop through each contact, calculate
      // distance to entity, save the ID of the entity that is closest.
-     int follow_id_ = -1;
-     double min_dist = std::numeric_limits<double>::infinity();
+    // int drones = 3;
+    // int max_id = drones/2;
+    // int car_speed = 9;
+    int follow_id_ = -1;
+    double min_dist = std::numeric_limits<double>::infinity();
      //bool first_interact = 0;
      for (auto &kv : *contacts_) {
 
@@ -121,14 +131,6 @@ bool PlayerFollowBehavior::step_autonomy(double t, double dt) {
          if (contact.id().team_id() == parent_->id().team_id()) {
              continue;
          }
-
-        //  if(!first_interact){
-        //     // Create the GenerateEntity message
-        //     auto msg = std::make_shared<Message<scrimmage_msgs::GenerateEntity>>();
-        //     sc::set(msg->data.mutable_state(), contact.id().team_id()); // Copy the new state
-        //     publish(msg); // Publish the GenerateEntity message
-        //     first_interact = 1;
-        //  }
 
          // Calculate distance to entity
          double dist = (contact.state()->pos() - state_->pos()).norm();
@@ -141,22 +143,54 @@ bool PlayerFollowBehavior::step_autonomy(double t, double dt) {
          }
      }
 
+     double heading = 0.0, distance = 0.0;
      // Head toward entity on other team
      if (contacts_->count(follow_id_) > 0) {
          // Get a reference to the entity's state.
          sc::StatePtr ent_state = contacts_->at(follow_id_).state();
 
-         // Calculate the required heading to follow the other entity
-         double heading = atan2(ent_state->pos()(1) - state_->pos()(1),
-                                ent_state->pos()(0) - state_->pos()(0));
+        if(0 == drone_id){
+            heading = atan2(ent_state->pos()(1) - state_->pos()(1), 
+            ent_state->pos()(0) - state_->pos()(0));
+            vars_.output(desired_heading_idx_, heading);
+            vars_.output(desired_speed_idx_, 0);
+        }
+        else {
+            int pos_x = (state_->pos()(0) + drone_id) - state_->pos()(0);
+            int pos_y = (state_->pos()(1) + drone_id * 2) - state_->pos()(1);
+            std::cout<<"x - " << pos_x << " y - " << pos_y << endl;
+            distance = sqrt(pow(pos_y, 2) - pow(pos_x, 2));
+            std::cout<<"distance is - " << distance << " speed is - " << distance/2 << endl;
+            heading = atan2((state_->pos()(1) + drone_id * 2) - state_->pos()(1), (state_->pos()(0) + drone_id) - state_->pos()(0));
+            vars_.output(desired_heading_idx_, heading);
+            vars_.output(desired_speed_idx_, distance/0.1);
 
-         // Set the heading
-         vars_.output(desired_heading_idx_, heading);
+        }
 
-         // Match entity's altitude
-         vars_.output(desired_alt_idx_, 10);
-
-     }
+         //Calculate the required heading to follow the other entity
+        // if(drone_id != 0){
+                
+        //         // Set the heading
+        //         vars_.output(desired_heading_idx_, masterDrone.heading()(0));
+        // }
+        // if(drone_id == 0){
+        //         heading = atan2(ent_state->pos()(1) - state_->pos()(1),
+        //                         ent_state->pos()(0) - state_->pos()(0));
+        //         Eigen::Vector3d pos = Eigen::Vector3d(ent_state->pos()(0), ent_state->pos()(1), 0);
+        //         double heading2 = atan2(state_->pos()(1) - masterDrone.pos()(1), 
+        //                         state_->pos()(0) - masterDrone.pos()(0));
+        //         Eigen::Vector3d head =  Eigen::Vector3d(heading2,0,0);
+        //         Eigen::Vector3d pos = Eigen::Vector3d(state_->pos()(0), state_->pos()(1), 10);
+        //         mtx.lock();
+        //         car.set_pos(pos)
+        //         masterDrone.set_pos(pos);
+        //         masterDrone.set_heading(head);
+        //         mtx.unlock();
+        //         // Set the heading
+        //         vars_.output(desired_heading_idx_, heading);
+        //         } 
+        
+    }
 
      return true;
 }
