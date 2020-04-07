@@ -66,6 +66,7 @@ int initiated_drone = 0;
 scrimmage::State masterDrone;
 scrimmage::State car;
 int counter = 15, counter2 = -15;
+double carx=0,cary=0;
 
 namespace sc = scrimmage;
 
@@ -144,11 +145,11 @@ bool PlayerFollowBehavior::step_autonomy(double t, double dt) {
      }
 
      double heading = 0.0, distance = 0.0;
+     double distance_from_car = 5.0;
      // Head toward entity on other team
      if (contacts_->count(follow_id_) > 0) {
          // Get a reference to the entity's state.
          sc::StatePtr ent_state = contacts_->at(follow_id_).state();
-
         if(0 == drone_id){
             heading = atan2(ent_state->pos()(1) - state_->pos()(1), 
             ent_state->pos()(0) - state_->pos()(0));
@@ -156,15 +157,34 @@ bool PlayerFollowBehavior::step_autonomy(double t, double dt) {
             vars_.output(desired_speed_idx_, 0);
         }
         else {
-            int pos_x = (state_->pos()(0) + drone_id) - state_->pos()(0);
-            int pos_y = (state_->pos()(1) + drone_id * 2) - state_->pos()(1);
-            std::cout<<"x - " << pos_x << " y - " << pos_y << endl;
-            distance = sqrt(pow(pos_y, 2) - pow(pos_x, 2));
-            std::cout<<"distance is - " << distance << " speed is - " << distance/2 << endl;
-            heading = atan2((state_->pos()(1) + drone_id * 2) - state_->pos()(1), (state_->pos()(0) + drone_id) - state_->pos()(0));
-            vars_.output(desired_heading_idx_, heading);
+            // int pos_x = (state_->pos()(0) + drone_id) - state_->pos()(0);
+            // int pos_y = (state_->pos()(1) + drone_id * 2) - state_->pos()(1);
+            // std::cout<<"x - " << pos_x << " y - " << pos_y << endl;
+            // distance = sqrt(pow(pos_y, 2) - pow(pos_x, 2));
+            // std::cout<<"distance is - " << distance << " speed is - " << distance/2 << endl;
+            // heading = atan2((state_->pos()(1) + drone_id * 2) - state_->pos()(1), (state_->pos()(0) + drone_id) - state_->pos()(0));
+            // vars_.output(desired_heading_idx_, heading);
+            // vars_.output(desired_speed_idx_, distance/0.1);
+            distance = 0.0;
+            double angle_for_drone = (180/2);
+            double car_angle_of_travel = (atan2(ent_state->pos()(1) - cary, ent_state->pos()(0) - carx))*180/3.1415;
+            
+            double drone_angle_of_travel = (int((car_angle_of_travel+180.0)+(angle_for_drone * drone_id))%360)*3.1415/180;
+            int pos_x = (ent_state->pos()(0) + (distance_from_car * (cos(drone_angle_of_travel))))- state_->pos()(0);
+            int pos_y = (ent_state->pos()(1) + (distance_from_car * (sin(drone_angle_of_travel)))) - state_->pos()(1);
+            double drone_direction = tan(drone_angle_of_travel);
+            distance = sqrt(abs(pow(pos_y, 2) + pow(pos_x, 2)));
+            std::cout<<"car "<<" old x - " << carx << " old y - " << cary << " new x - " << ent_state->pos()(0) << " new y - " << ent_state->pos()(1)<< " car_angle_of_travel - "<< car_angle_of_travel;
+            std::cout<<" drone_id - "<<drone_id<<" old x - " << state_->pos()(0) << " old y - " << state_->pos()(1);
+            std::cout<<" new x - " << pos_x << " new y - " << pos_y;
+            std::cout<<" drone_angle_of_travel - " << drone_angle_of_travel << " drone_direction - " << drone_direction;
+            std::cout<<" distance is - " << distance << " speed is - " << distance/0.1 << endl;
+            vars_.output(desired_heading_idx_, drone_direction);
             vars_.output(desired_speed_idx_, distance/0.1);
-
+            mtx.lock();
+            carx = ent_state->pos()(0);
+            cary = ent_state->pos()(1);
+            mtx.unlock();
         }
 
          //Calculate the required heading to follow the other entity
