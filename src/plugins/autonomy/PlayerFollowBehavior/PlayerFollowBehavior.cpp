@@ -61,13 +61,6 @@
 
 using std::cout;
 using std::endl;
-std::mutex mtx;
-int initiated_drone = 0;
-scrimmage::State masterDrone;
-scrimmage::State car;
-int counter = 15, counter2 = -15;
-double carx=0,cary=0;
-
 namespace sc = scrimmage;
 
 REGISTER_PLUGIN(scrimmage::Autonomy,
@@ -79,50 +72,46 @@ namespace autonomy {
 
 void PlayerFollowBehavior::init(std::map<std::string, std::string> &params) {
     
-     double initial_speed = sc::get<double>("initial_speed", params, 15);
-     desired_alt_idx_ = vars_.declare(VariableIO::Type::desired_altitude, VariableIO::Direction::Out);
-     desired_speed_idx_ = vars_.declare(VariableIO::Type::desired_speed, VariableIO::Direction::Out);
-     desired_heading_idx_ = vars_.declare(VariableIO::Type::desired_heading, VariableIO::Direction::Out);
+     // Entities are number sequentially from 1 by SCRIMMAGE based on the order
+     // they are instantiated in the mission file.
+     // Possibly there is a way to query SCRIMMAGE to find the id of the first
+     // UAS entity, but here we take a shortcut and pass in the number of UAS
+     // and the ID of the first UAS.  This should be fixed in future to make it
+     // scalable and less brittle.
+     int first_drone_id = sc::get<int>("first_drone_id", params, 1);
+     int num_drones = sc::get<int>("num_drones", params, 1);
 
-    mtx.lock();
-     drone_id = initiated_drone;
-     if(initiated_drone>0){
-         initiated_drone = initiated_drone * -1;
-     }
-     else if (initiated_drone < 0 ) { 
-        initiated_drone = initiated_drone * -1;
-        initiated_drone++;
-    }
-    else if (initiated_drone == 0 ) {initiated_drone = 1;}
-     mtx.unlock();
-    
-     vars_.output(desired_speed_idx_, initial_speed);
-     vars_.output(desired_alt_idx_, state_->pos()(2));
-     vars_.output(desired_heading_idx_, state_->quat().yaw());
-     
-     if(drone_id < 0) {
-         std::cout << "initial setup for -ve drones " << endl;;
-        state_->pos()(0) = -15;
-        state_->pos()(1) = -3;
+     // Here the UAS are renumbered 1 to M
+     drone_id = parent_->id().id() - first_drone_id + 1;
+     cout << "Drone ID: " << drone_id << endl;
 
-    } else if(drone_id > 0){
-                 std::cout << "initial setup for +ve drones " << endl;
-        state_->pos()(0) = -15;
-        state_->pos()(1) = 3;
-    }
+     // Initialise gains for acceleration controller
+     K_p = sc::get<double>("K_p", params, 1);
+     K_v = sc::get<double>("K_v", params, 1);
+
+     // Defined in paper C. Kinematic Reduction
+     theta = (2.0*drone_id - num_drones - 1.0) / (2.0*num_drones - 2.0);
+     cout << "Theta: " << theta << endl;
+     distance_from_target = sc::get<double>("distance_from_target", params, 5.0);
+     desired_altitude = sc::get<double>("desired_altitude", params, 5.0);
+
+     acc_x_idx_ = vars_.declare(VariableIO::Type::acceleration_x, VariableIO::Direction::Out);
+     acc_y_idx_ = vars_.declare(VariableIO::Type::acceleration_y, VariableIO::Direction::Out);
+     acc_z_idx_ = vars_.declare(VariableIO::Type::acceleration_z, VariableIO::Direction::Out);
+     heading_idx_ = vars_.declare(VariableIO::Type::turn_rate, VariableIO::Direction::Out);
+     vars_.output(acc_x_idx_, 0);
+     vars_.output(acc_y_idx_, 0);
+     vars_.output(acc_z_idx_, 0);
 
 }
 
 bool PlayerFollowBehavior::step_autonomy(double t, double dt) {
     
     // Find nearest entity on other team. Loop through each contact, calculate
-     // distance to entity, save the ID of the entity that is closest.
-    // int drones = 3;
-    // int max_id = drones/2;
-    // int car_speed = 9;
+    // distance to entity, save the ID of the entity that is closest.
     int follow_id_ = -1;
     double min_dist = std::numeric_limits<double>::infinity();
-     //bool first_interact = 0;
+
      for (auto &kv : *contacts_) {
 
          int contact_id = kv.first;
@@ -144,72 +133,25 @@ bool PlayerFollowBehavior::step_autonomy(double t, double dt) {
          }
      }
 
-     double heading = 0.0, distance = 0.0;
-     double distance_from_car = 5.0;
+     // ************ Currently hard-coded desired target heading ***************
+     double desired_target_heading = Angles::deg2rad(-60.0);
+
      // Head toward entity on other team
      if (contacts_->count(follow_id_) > 0) {
          // Get a reference to the entity's state.
          sc::StatePtr ent_state = contacts_->at(follow_id_).state();
-        if(0 == drone_id){
-            heading = atan2(ent_state->pos()(1) - state_->pos()(1), 
-            ent_state->pos()(0) - state_->pos()(0));
-            vars_.output(desired_heading_idx_, heading);
-            vars_.output(desired_speed_idx_, 0);
-        }
-        else {
-            // int pos_x = (state_->pos()(0) + drone_id) - state_->pos()(0);
-            // int pos_y = (state_->pos()(1) + drone_id * 2) - state_->pos()(1);
-            // std::cout<<"x - " << pos_x << " y - " << pos_y << endl;
-            // distance = sqrt(pow(pos_y, 2) - pow(pos_x, 2));
-            // std::cout<<"distance is - " << distance << " speed is - " << distance/2 << endl;
-            // heading = atan2((state_->pos()(1) + drone_id * 2) - state_->pos()(1), (state_->pos()(0) + drone_id) - state_->pos()(0));
-            // vars_.output(desired_heading_idx_, heading);
-            // vars_.output(desired_speed_idx_, distance/0.1);
-            distance = 0.0;
-            double angle_for_drone = (180/2);
-            double car_angle_of_travel = (atan2(ent_state->pos()(1) - cary, ent_state->pos()(0) - carx))*180/3.1415;
-            
-            double drone_angle_of_travel = (int((car_angle_of_travel+180.0)+(angle_for_drone * drone_id))%360)*3.1415/180;
-            int pos_x = (ent_state->pos()(0) + (distance_from_car * (cos(drone_angle_of_travel))))- state_->pos()(0);
-            int pos_y = (ent_state->pos()(1) + (distance_from_car * (sin(drone_angle_of_travel)))) - state_->pos()(1);
-            double drone_direction = tan(drone_angle_of_travel);
-            distance = sqrt(abs(pow(pos_y, 2) + pow(pos_x, 2)));
-            std::cout<<"car "<<" old x - " << carx << " old y - " << cary << " new x - " << ent_state->pos()(0) << " new y - " << ent_state->pos()(1)<< " car_angle_of_travel - "<< car_angle_of_travel;
-            std::cout<<" drone_id - "<<drone_id<<" old x - " << state_->pos()(0) << " old y - " << state_->pos()(1);
-            std::cout<<" new x - " << pos_x << " new y - " << pos_y;
-            std::cout<<" drone_angle_of_travel - " << drone_angle_of_travel << " drone_direction - " << drone_direction;
-            std::cout<<" distance is - " << distance << " speed is - " << distance/0.1 << endl;
-            vars_.output(desired_heading_idx_, drone_direction);
-            vars_.output(desired_speed_idx_, distance/0.1);
-            mtx.lock();
-            carx = ent_state->pos()(0);
-            cary = ent_state->pos()(1);
-            mtx.unlock();
-        }
 
-         //Calculate the required heading to follow the other entity
-        // if(drone_id != 0){
-                
-        //         // Set the heading
-        //         vars_.output(desired_heading_idx_, masterDrone.heading()(0));
-        // }
-        // if(drone_id == 0){
-        //         heading = atan2(ent_state->pos()(1) - state_->pos()(1),
-        //                         ent_state->pos()(0) - state_->pos()(0));
-        //         Eigen::Vector3d pos = Eigen::Vector3d(ent_state->pos()(0), ent_state->pos()(1), 0);
-        //         double heading2 = atan2(state_->pos()(1) - masterDrone.pos()(1), 
-        //                         state_->pos()(0) - masterDrone.pos()(0));
-        //         Eigen::Vector3d head =  Eigen::Vector3d(heading2,0,0);
-        //         Eigen::Vector3d pos = Eigen::Vector3d(state_->pos()(0), state_->pos()(1), 10);
-        //         mtx.lock();
-        //         car.set_pos(pos)
-        //         masterDrone.set_pos(pos);
-        //         masterDrone.set_heading(head);
-        //         mtx.unlock();
-        //         // Set the heading
-        //         vars_.output(desired_heading_idx_, heading);
-        //         } 
-        
+         // Calculate desired position in formation
+         double alpha = desired_target_heading + M_PI + theta;
+         Eigen::Vector3d desired_pos = ent_state->pos() + distance_from_target*Eigen::Vector3d(cos(alpha), sin(alpha), 0);
+
+         Eigen::Vector3d delta_pos = desired_pos - state_->pos();
+         Eigen::Vector3d delta_vel = ent_state->vel() - state_->vel(); // match velocity of vehicle
+         Eigen::Vector3d acc = K_p * delta_pos + K_v * delta_vel;
+         vars_.output(acc_x_idx_, acc(0));
+         vars_.output(acc_y_idx_, acc(1));
+         vars_.output(acc_z_idx_, 0.0);
+         vars_.output(heading_idx_, desired_target_heading);
     }
 
      return true;

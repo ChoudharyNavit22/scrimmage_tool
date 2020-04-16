@@ -51,13 +51,20 @@ class PlayerFollowBehavior : public scrimmage::Autonomy {
     bool step_autonomy(double t, double dt) override;
 
  protected:
-     int desired_alt_idx_ = 0;
-     int desired_speed_idx_ = 0;
-     int desired_heading_idx_ = 0;
+     int acc_x_idx_ = 0;
+     int acc_y_idx_ = 0;
+     int acc_z_idx_ = 0;
+     int heading_idx_ = 0;
+     double K_p = 1.0;
+     double K_v = 1.0;
+
      int min_dist = 0;
-     scrimmage::State vehicle_broadcast_;
      int drone_id = 0;
-     std::string droneId_;
+     int num_drones = 0;
+     double theta = 0.0;
+     double distance_from_target = 0.0;  // radius of formation
+     double desired_altitude = 0.0;
+
      
 };
 } // namespace autonomy
