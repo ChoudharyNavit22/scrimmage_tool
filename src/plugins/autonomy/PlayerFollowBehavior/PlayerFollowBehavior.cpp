@@ -61,6 +61,8 @@
 
 using std::cout;
 using std::endl;
+std::mutex mtx;
+int ground_vehicle_id = 0;
 namespace sc = scrimmage;
 
 REGISTER_PLUGIN(scrimmage::Autonomy,
@@ -78,12 +80,13 @@ void PlayerFollowBehavior::init(std::map<std::string, std::string> &params) {
      // UAS entity, but here we take a shortcut and pass in the number of UAS
      // and the ID of the first UAS.  This should be fixed in future to make it
      // scalable and less brittle.
+     num_pmvl = sc::get<int>("num_pmvl", params, 1);
      int first_drone_id = sc::get<int>("first_drone_id", params, 1);
      int num_drones = sc::get<int>("num_drones", params, 1);
 
      // Here the UAS are renumbered 1 to M
      drone_id = parent_->id().id() - first_drone_id + 1;
-     cout << "Drone ID: " << drone_id << endl;
+     cout <<" Drone ID: " << drone_id << endl;
 
      // Initialise gains for acceleration controller
      K_p = sc::get<double>("K_p", params, 1);
@@ -103,6 +106,15 @@ void PlayerFollowBehavior::init(std::map<std::string, std::string> &params) {
      vars_.output(acc_y_idx_, 0);
      vars_.output(acc_z_idx_, 0);
 
+     // Output shape of kill zone
+     auto sphere = std::make_shared<scrimmage_proto::Shape>();
+     sphere->set_opacity(0.25);
+     sphere->set_persistent(true);
+     sc::set(sphere->mutable_color(), 255, 0, 0);
+     sphere->mutable_sphere()->set_radius(5);
+     sc::set(sphere->mutable_sphere()->mutable_center(), 700, 525, 0);
+     draw_shape(sphere);
+
 }
 
 bool PlayerFollowBehavior::step_autonomy(double t, double dt) {
@@ -111,6 +123,9 @@ bool PlayerFollowBehavior::step_autonomy(double t, double dt) {
     // distance to entity, save the ID of the entity that is closest.
     int follow_id_ = -1;
     double min_dist = std::numeric_limits<double>::infinity();
+    sc::StatePtr ent_state;
+    Eigen::Vector3d ent_state_vel = Eigen::Vector3d(0,0,0);
+    Eigen::Vector3d ent_state_pos_avg = Eigen::Vector3d(0,0,0);
 
      for (auto &kv : *contacts_) {
 
@@ -121,6 +136,28 @@ bool PlayerFollowBehavior::step_autonomy(double t, double dt) {
          if (contact.id().team_id() == parent_->id().team_id()) {
              continue;
          }
+         else {
+             ent_state_array[ground_vehicle_id] = contact.state();
+             if(ground_vehicle_id == num_pmvl - 1) {
+                 for( int i = 0; i <= num_pmvl - 1; i++){
+                     ent_state_pos_avg = ent_state_pos_avg + ent_state_array[i]->pos();
+                     ent_state_vel = ent_state_vel + ent_state_array[i]->vel();
+                     if(i == num_pmvl - 1){
+                         ent_state_pos_avg = ent_state_pos_avg / num_pmvl;
+                         ent_state_vel = ent_state_vel / num_pmvl;
+                     };
+                 };
+             }
+             mtx.lock();
+             if(ground_vehicle_id == num_pmvl - 1){
+                 ground_vehicle_id = 0;
+             }
+             else {
+                ground_vehicle_id++;
+             }
+             mtx.unlock();
+         }
+        
 
          // Calculate distance to entity
          double dist = (contact.state()->pos() - state_->pos()).norm();
@@ -134,19 +171,23 @@ bool PlayerFollowBehavior::step_autonomy(double t, double dt) {
      }
 
      // ************ Currently hard-coded desired target heading ***************
-     double desired_target_heading = Angles::deg2rad(-60.0);
 
+     Eigen::Vector3d desired_heading = Eigen::Vector3d(700,525,0);
+     int headingX = desired_heading(0) - ent_state_pos_avg(0);
+     int headingY = desired_heading(1) - ent_state_pos_avg(1);
+     //double desired_target_heading = Angles::deg2rad(60.0);
+     double desired_target_heading = atan2((double)headingY,(double)headingX);
      // Head toward entity on other team
      if (contacts_->count(follow_id_) > 0) {
          // Get a reference to the entity's state.
-         sc::StatePtr ent_state = contacts_->at(follow_id_).state();
+         //ent_state = contacts_->at(follow_id_).state();
 
          // Calculate desired position in formation
          double alpha = desired_target_heading + M_PI + theta;
-         Eigen::Vector3d desired_pos = ent_state->pos() + distance_from_target*Eigen::Vector3d(cos(alpha), sin(alpha), 0);
+         Eigen::Vector3d desired_pos = ent_state_pos_avg + distance_from_target*Eigen::Vector3d(cos(alpha), sin(alpha), 0);
 
          Eigen::Vector3d delta_pos = desired_pos - state_->pos();
-         Eigen::Vector3d delta_vel = ent_state->vel() - state_->vel(); // match velocity of vehicle
+         Eigen::Vector3d delta_vel = ent_state_vel - state_->vel(); // match velocity of vehicle
          Eigen::Vector3d acc = K_p * delta_pos + K_v * delta_vel;
          vars_.output(acc_x_idx_, acc(0));
          vars_.output(acc_y_idx_, acc(1));

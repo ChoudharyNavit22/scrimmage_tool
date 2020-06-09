@@ -3,7 +3,7 @@
 <runscript xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     name="Test">
 
-  <run start="0.0" end="100" dt="0.1"
+  <run start="0.0" end="300" dt="0.1"
        time_warp="10"
        enable_gui="true"
        network_gui="false"
@@ -33,21 +33,27 @@
 
   <latitude_origin>35.721025</latitude_origin>
   <longitude_origin>-120.767925</longitude_origin>
-  <altitude_origin>300</altitude_origin>
+  <altitude_origin>0</altitude_origin>
   <show_origin>true</show_origin>
   <origin_length>10</origin_length>
 
-  <entity_interaction enable_team_collisions="false">SimpleCollision</entity_interaction>
+  <!-- <entity_interaction enable_team_collisions="false">SimpleCollision</entity_interaction> -->
 
-    <entity_interaction enable_collision_detection="false"
+ <entity_interaction enable_collision_detection="true"
                       show_rays="true"
+                      remove_on_collision="false"
+                      enable_team_collisions="false"
+                      enable_non_team_collisions="true"
+                      show_collision_shapes="false"
                       publish_on_local_networks="true"
                       pcl_network_name="LocalNetwork"
                       pcl_topic_name="pointcloud"
                       prepend_pcl_topic_with_id="false"
+                      enable_terrain="true"
+                      enable_ground_plane="false"
                       >BulletCollision</entity_interaction>
 
-    <!-- <entity_interaction>MapGen2D</entity_interaction> -->
+    <entity_interaction map="simple_city">MapGen2D</entity_interaction>
 
 
   <network>GlobalNetwork</network>
@@ -76,26 +82,23 @@
     <z>0</z>
     <heading>0</heading>
     <controller pitch_pid="0.0, 0.0, 0.0, 10" roll_pid="0.0, 0.0, 0.0, 10">UnicyclePID</controller>
-    <motion_model speed_max="25" turn_rate_max="0.6">Unicycle3D</motion_model>
+    <motion_model speed_max="25" turn_rate_max="1.5">Unicycle3D</motion_model>
     <visual_model>volkswagen</visual_model>
 
     <autonomy waypointlist_network="LocalNetwork"
               waypoint_network="LocalNetwork">WaypointDispatcher</autonomy>
 
         <autonomy network_name="LocalNetwork" topic_Name="WaypointList"
-              mode="racetrack"
+              mode="follow_once"
               show_waypoints="true"
               waypoints="
-                        [ XYZ 0 200   0 0 0 0 0 5 -1 ]
-                        [ XYZ 0 200 200 0 0 0 0 5 -1 ]
-                        [ XYZ 0   0 200 0 0 0 0 5 -1 ]
-                        [ XYZ 0   0   0 0 0 0 0 5 -1 ]
+                        [ XYZ 0 1100 350 0 0 0 0 5 -1 ]
                         "
               >WaypointGenerator</autonomy>
-
+    <autonomy >AvoidWalls</autonomy>
     <autonomy show_shapes="true" max_speed="${max_speed=9} " behaviors="
-      [ AvoidEntityMS gain='10.0' show_shapes='true' avoid_non_team='true' sphere_of_influence='35' minimum_range='2' ]
-       [ MoveToGoalMS gain='1.0' show_shapes='true' goal='200,100,0']"
+      [ AvoidEntityMS gain='10.0' show_shapes='true' avoid_non_team='true' avoid_team='false' sphere_of_influence='35' minimum_range='2' ]
+       [ MoveToGoalMS gain='1.0' goal='1100,350,0']"
               >MotorSchemas</autonomy>
 
   </entity>
@@ -146,8 +149,8 @@
    <health>1</health>
    <radius>10</radius>
 
-   <variance_x>0</variance_x>
-   <variance_y>10</variance_y>
+   <variance_x>20</variance_x>
+   <variance_y>20</variance_y>
    <variance_z>0</variance_z>
 
    <x>-10</x>
@@ -156,15 +159,10 @@
 
    <heading>0</heading>
    <altitude>10</altitude>
-   <!-- <controller speed_pid="2.0, 0.1, 0, 1">DoubleIntegratorControllerVelYaw</controller> -->
    <controller>DirectController</controller>
-   <!--<controller>SimpleAircraftControllerPID</controller>-->
    <motion_model max_vel="30" max_acc="30" motion_model_sets_yaw="false" >DoubleIntegrator</motion_model>
-   <!--<motion_model initial_speed="10" >SimpleAircraft</motion_model>-->
-<!--   <sensor>MyNoisyState</sensor>-->
    <visual_model visual_scale="3.0">iris</visual_model>
-   <!-- <visual_model>zephyr-red</visual_model> -->
-   <autonomy first_drone_id="2" num_drones="5" distance_from_target="30.0" desired_altitude="10.0" K_p="1.0" K_v="1.0">PlayerFollowBehavior</autonomy>
+   <autonomy num_pmvl="1" first_drone_id="2" num_drones="10" distance_from_target="30.0" desired_altitude="10.0" K_p="1.0" K_v="1.0">PlayerFollowBehavior</autonomy>
    <base>
      <latitude>35.719961</latitude>
      <longitude>-120.767304</longitude>
