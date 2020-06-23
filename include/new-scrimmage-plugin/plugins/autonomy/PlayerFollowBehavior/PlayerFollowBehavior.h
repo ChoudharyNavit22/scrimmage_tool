@@ -55,18 +55,22 @@ class PlayerFollowBehavior : public scrimmage::Autonomy {
      int acc_y_idx_ = 0;
      int acc_z_idx_ = 0;
      int heading_idx_ = 0;
-     double K_p = 1.0;
-     double K_v = 1.0;
-     int num_pmvl= 0;
+     double K_p_ = 1.0;
+     double K_v_ = 1.0;
+     int num_pmvl_ = 0;
 
-     int min_dist = 0;
-     int drone_id = 0;
-     int num_drones = 0;
-     double theta = 0.0;
-     double distance_from_target = 0.0;  // radius of formation
-     double desired_altitude = 0.0;
-     sc::StatePtr ent_state_array[10];
+     int min_dist_ = 0;
+     int drone_id_ = 0;
+     int num_drones_ = 0;
+     double theta_ = 0.0;
+     double distance_from_target_ = 0.0;  // radius of formation
+     double desired_altitude_ = 0.0;
+     sc::StatePtr ent_state_array_[10];
 
+     const int herding_count_max_ = 10;
+     int herding_update_counter_ = 0;
+
+     double update_herding_params();
      
 };
 } // namespace autonomy

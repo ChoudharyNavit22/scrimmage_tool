@@ -80,23 +80,23 @@ void PlayerFollowBehavior::init(std::map<std::string, std::string> &params) {
      // UAS entity, but here we take a shortcut and pass in the number of UAS
      // and the ID of the first UAS.  This should be fixed in future to make it
      // scalable and less brittle.
-     num_pmvl = sc::get<int>("num_pmvl", params, 1);
+     num_pmvl_ = sc::get<int>("num_pmvl", params, 1);
      int first_drone_id = sc::get<int>("first_drone_id", params, 1);
-     int num_drones = sc::get<int>("num_drones", params, 1);
+     num_drones_ = sc::get<int>("num_drones", params, 1);
 
      // Here the UAS are renumbered 1 to M
-     drone_id = parent_->id().id() - first_drone_id + 1;
-     cout <<" Drone ID: " << drone_id << endl;
+     drone_id_ = parent_->id().id() - first_drone_id + 1;
+     cout <<" Drone ID: " << drone_id_ << endl;
 
-     // Initialise gains for acceleration controller
-     K_p = sc::get<double>("K_p", params, 1);
-     K_v = sc::get<double>("K_v", params, 1);
+     // Initidoalise gains for acceleration controller
+     K_p_ = sc::get<double>("K_p", params, 1);
+     K_v_ = sc::get<double>("K_v", params, 1);
 
      // Defined in paper C. Kinematic Reduction
-     theta = (2.0*drone_id - num_drones - 1.0) / (2.0*num_drones - 2.0);
-     cout << "Theta: " << theta << endl;
-     distance_from_target = sc::get<double>("distance_from_target", params, 5.0);
-     desired_altitude = sc::get<double>("desired_altitude", params, 5.0);
+     theta_ = update_herding_params();
+     cout << "Theta: " << theta_ << endl;
+     distance_from_target_ = sc::get<double>("distance_from_target", params, 5.0);
+     desired_altitude_ = sc::get<double>("desired_altitude", params, 5.0);
 
      acc_x_idx_ = vars_.declare(VariableIO::Type::acceleration_x, VariableIO::Direction::Out);
      acc_y_idx_ = vars_.declare(VariableIO::Type::acceleration_y, VariableIO::Direction::Out);
@@ -115,64 +115,92 @@ void PlayerFollowBehavior::init(std::map<std::string, std::string> &params) {
      sc::set(sphere->mutable_sphere()->mutable_center(), 700, 525, 0);
      draw_shape(sphere);
 
+     herding_update_counter_ = herding_count_max_;
+
+}
+
+double PlayerFollowBehavior::update_herding_params(){
+  double theta = (2*M_PI*2/5.0) * (2.0*drone_id_ - num_drones_ - 1.0) / (2.0*num_drones_ - 2.0);
+  return theta;
 }
 
 bool PlayerFollowBehavior::step_autonomy(double t, double dt) {
     
+    cout << "NUM DRONES: " << num_drones_ <<endl;
+    // Update herding formation
+    herding_update_counter_--;
+    if (herding_update_counter_ == 0){
+      herding_update_counter_ = herding_count_max_;
+      theta_ = update_herding_params();
+    }
+
     // Find nearest entity on other team. Loop through each contact, calculate
     // distance to entity, save the ID of the entity that is closest.
     int follow_id_ = -1;
-    double min_dist = std::numeric_limits<double>::infinity();
-    sc::StatePtr ent_state;
+    double min_dist_ = std::numeric_limits<double>::infinity();
+    sc::StatePtr ent_state_;
     Eigen::Vector3d ent_state_vel = Eigen::Vector3d(0,0,0);
     Eigen::Vector3d ent_state_pos_avg = Eigen::Vector3d(0,0,0);
 
-     for (auto &kv : *contacts_) {
-
+    drone_id_ = 0;
+    num_drones_ = 0;
+    bool found_id = false;
+    for (auto &kv : *contacts_) {
          int contact_id = kv.first;
          sc::Contact &contact = kv.second;
 
+         if (!found_id){
+           drone_id_++;
+           if (contact_id == parent_->id().id()){
+             found_id = true;
+           }
+         }
+
+
+
          // Skip if this contact is on the same team
          if (contact.id().team_id() == parent_->id().team_id()) {
+             num_drones_++;
+             // cout << "ON TEAM!" << endl;
              continue;
          }
          else {
-             ent_state_array[ground_vehicle_id] = contact.state();
-             if(ground_vehicle_id == num_pmvl - 1) {
-                 for( int i = 0; i <= num_pmvl - 1; i++){
-                     ent_state_pos_avg = ent_state_pos_avg + ent_state_array[i]->pos();
-                     ent_state_vel = ent_state_vel + ent_state_array[i]->vel();
-                     if(i == num_pmvl - 1){
-                         ent_state_pos_avg = ent_state_pos_avg / num_pmvl;
-                         ent_state_vel = ent_state_vel / num_pmvl;
+             ent_state_array_[ground_vehicle_id] = contact.state();
+             if(ground_vehicle_id == num_pmvl_ - 1) {
+                 for( int i = 0; i <= num_pmvl_ - 1; i++){
+                     ent_state_pos_avg = ent_state_pos_avg + ent_state_array_[i]->pos();
+                     ent_state_vel = ent_state_vel + ent_state_array_[i]->vel();
+                     if(i == num_pmvl_ - 1){
+                         ent_state_pos_avg = ent_state_pos_avg / num_pmvl_;
+                         ent_state_vel = ent_state_vel / num_pmvl_;
                      };
                  };
              }
-             mtx.lock();
-             if(ground_vehicle_id == num_pmvl - 1){
+             // mtx.lock();
+             if(ground_vehicle_id == num_pmvl_ - 1){
                  ground_vehicle_id = 0;
              }
              else {
                 ground_vehicle_id++;
              }
-             mtx.unlock();
+             // mtx.unlock();
          }
-        
+
 
          // Calculate distance to entity
          double dist = (contact.state()->pos() - state_->pos()).norm();
 
-         if (dist < min_dist) {
+         if (dist < min_dist_) {
              // If this is the minimum distance, save distance and reference to
              // entity
-             min_dist = dist;
+             min_dist_ = dist;
              follow_id_ = contact_id;
          }
      }
 
      // ************ Currently hard-coded desired target heading ***************
 
-     Eigen::Vector3d desired_heading = Eigen::Vector3d(700,525,0);
+     Eigen::Vector3d desired_heading = Eigen::Vector3d(600,500,0);
      int headingX = desired_heading(0) - ent_state_pos_avg(0);
      int headingY = desired_heading(1) - ent_state_pos_avg(1);
      //double desired_target_heading = Angles::deg2rad(60.0);
@@ -183,12 +211,12 @@ bool PlayerFollowBehavior::step_autonomy(double t, double dt) {
          //ent_state = contacts_->at(follow_id_).state();
 
          // Calculate desired position in formation
-         double alpha = desired_target_heading + M_PI + theta;
-         Eigen::Vector3d desired_pos = ent_state_pos_avg + distance_from_target*Eigen::Vector3d(cos(alpha), sin(alpha), 0);
+         double alpha = desired_target_heading + M_PI + theta_;
+         Eigen::Vector3d desired_pos = ent_state_pos_avg + distance_from_target_*Eigen::Vector3d(cos(alpha), sin(alpha), 0);
 
          Eigen::Vector3d delta_pos = desired_pos - state_->pos();
          Eigen::Vector3d delta_vel = ent_state_vel - state_->vel(); // match velocity of vehicle
-         Eigen::Vector3d acc = K_p * delta_pos + K_v * delta_vel;
+         Eigen::Vector3d acc = K_p_ * delta_pos + K_v_ * delta_vel;
          vars_.output(acc_x_idx_, acc(0));
          vars_.output(acc_y_idx_, acc(1));
          vars_.output(acc_z_idx_, 0.0);

@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="http://gtri.gatech.edu"?>
+<params>
+  <library>RWSAutonomy_plugin</library>
+  <weapon_range>100.0</weapon_range>
+  <fire_rate>1.0</fire_rate>
+  <azi_fire_env>0.1</azi_fire_env>
+  <elev_fire_env>0.1</elev_fire_env>
+  <!-- <pk>1.0</pk> -->
+  <bullet_speed>500.0</bullet_speed>
+</params>
