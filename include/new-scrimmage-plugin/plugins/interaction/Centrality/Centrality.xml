@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="http://gtri.gatech.edu"?>
+<params>
+  <library>Centrality_plugin</library>
+  <comms_range>30</comms_range>  
+</params>

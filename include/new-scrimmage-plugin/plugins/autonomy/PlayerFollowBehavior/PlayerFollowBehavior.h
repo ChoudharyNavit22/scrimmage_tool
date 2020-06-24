@@ -65,12 +65,14 @@ class PlayerFollowBehavior : public scrimmage::Autonomy {
      double theta_ = 0.0;
      double distance_from_target_ = 0.0;  // radius of formation
      double desired_altitude_ = 0.0;
+     double footprint_ = 0.0;
      sc::StatePtr ent_state_array_[10];
 
      const int herding_count_max_ = 10;
      int herding_update_counter_ = 0;
 
-     double update_herding_params();
+     std::pair<double, double> update_herding_params(double footprint);
+     double get_herd_footprint();
      
 };
 } // namespace autonomy

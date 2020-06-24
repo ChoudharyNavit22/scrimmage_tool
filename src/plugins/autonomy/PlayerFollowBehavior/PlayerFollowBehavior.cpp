@@ -93,7 +93,7 @@ void PlayerFollowBehavior::init(std::map<std::string, std::string> &params) {
      K_v_ = sc::get<double>("K_v", params, 1);
 
      // Defined in paper C. Kinematic Reduction
-     theta_ = update_herding_params();
+     std::tie(theta_, distance_from_target_) = update_herding_params(footprint_);
      cout << "Theta: " << theta_ << endl;
      distance_from_target_ = sc::get<double>("distance_from_target", params, 5.0);
      desired_altitude_ = sc::get<double>("desired_altitude", params, 5.0);
@@ -119,19 +119,49 @@ void PlayerFollowBehavior::init(std::map<std::string, std::string> &params) {
 
 }
 
-double PlayerFollowBehavior::update_herding_params(){
+std::pair<double, double> PlayerFollowBehavior::update_herding_params(double footprint){
   double theta = (2*M_PI*2/5.0) * (2.0*drone_id_ - num_drones_ - 1.0) / (2.0*num_drones_ - 2.0);
-  return theta;
+  double distance_from_target = 2.2*footprint;
+  return std::make_pair(theta, distance_from_target);
+}
+
+double  PlayerFollowBehavior::get_herd_footprint(){
+  double footprint = 0.0;
+  double dist = 0.0;
+  for (auto &kv1 : *contacts_) {
+    sc::Contact &contact1 = kv1.second;
+    if (contact1.id().team_id() != parent_->id().team_id()) {
+      for (auto &kv2 : *contacts_) {
+        //int contact_id = kv1.first;
+        sc::Contact &contact2 = kv2.second;
+        if (contact2.id().team_id() != parent_->id().team_id()) {
+          dist = (contact2.state()->pos() - contact1.state()->pos()).norm();
+          if (dist > footprint){
+            footprint = dist;
+          }
+        }
+      }
+    }
+  }
+  return footprint;
 }
 
 bool PlayerFollowBehavior::step_autonomy(double t, double dt) {
     
-    cout << "NUM DRONES: " << num_drones_ <<endl;
+    // cout << "NUM DRONES: " << num_drones_ <<endl;
     // Update herding formation
     herding_update_counter_--;
     if (herding_update_counter_ == 0){
       herding_update_counter_ = herding_count_max_;
-      theta_ = update_herding_params();
+      footprint_ = get_herd_footprint();
+      // std::cout << "footprint: " << footprint_ << std::endl;
+      if (footprint_ < 10){
+        footprint_ = 10.0;
+      }
+      if (footprint_ > 60){
+        footprint_ = 60;
+      }
+      std::tie(theta_, distance_from_target_) = update_herding_params(footprint_);
     }
 
     // Find nearest entity on other team. Loop through each contact, calculate
@@ -200,7 +230,7 @@ bool PlayerFollowBehavior::step_autonomy(double t, double dt) {
 
      // ************ Currently hard-coded desired target heading ***************
 
-     Eigen::Vector3d desired_heading = Eigen::Vector3d(600,500,0);
+     Eigen::Vector3d desired_heading = Eigen::Vector3d(700,525,0);
      int headingX = desired_heading(0) - ent_state_pos_avg(0);
      int headingY = desired_heading(1) - ent_state_pos_avg(1);
      //double desired_target_heading = Angles::deg2rad(60.0);
