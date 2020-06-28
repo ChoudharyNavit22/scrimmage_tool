@@ -112,7 +112,7 @@ void PlayerFollowBehavior::init(std::map<std::string, std::string> &params) {
      sphere->set_persistent(true);
      sc::set(sphere->mutable_color(), 255, 0, 0);
      sphere->mutable_sphere()->set_radius(5);
-     sc::set(sphere->mutable_sphere()->mutable_center(), 700, 525, 0);
+     sc::set(sphere->mutable_sphere()->mutable_center(), 600, 500, 0);
      draw_shape(sphere);
 
      herding_update_counter_ = herding_count_max_;

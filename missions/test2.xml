@@ -147,7 +147,7 @@
  <entity>
    <team_id>2</team_id>
    <color>255 0 0</color>
-   <count>30</count>
+   <count>20</count>
    <health>1</health>
    <radius>1</radius>
 
@@ -162,9 +162,9 @@
    <heading>0</heading>
    <altitude>10</altitude>
    <controller>DirectController</controller>
-   <motion_model max_vel="30" max_acc="30" motion_model_sets_yaw="false" >DoubleIntegrator</motion_model>
+   <motion_model max_vel="30" max_acc="50" motion_model_sets_yaw="false" >DoubleIntegrator</motion_model>
    <visual_model visual_scale="3.0">iris</visual_model>
-   <autonomy num_pmvl="2" first_drone_id="3" num_drones="30" distance_from_target="30.0" desired_altitude="30.0" K_p="1.0" K_v="1.0">PlayerFollowBehavior</autonomy>
+   <autonomy num_pmvl="2" first_drone_id="3" num_drones="20" distance_from_target="30.0" desired_altitude="30.0" K_p="1.0" K_v="1.0">PlayerFollowBehavior</autonomy>
    <!-- <base>
      <latitude>35.719961</latitude>
      <longitude>-120.767304</longitude>
