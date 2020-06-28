@@ -88,7 +88,7 @@ void PlayerFollowBehavior::init(std::map<std::string, std::string> &params) {
      drone_id_ = parent_->id().id() - first_drone_id + 1;
      cout <<" Drone ID: " << drone_id_ << endl;
 
-     // Initidoalise gains for acceleration controller
+     // Initidialise gains for acceleration controller
      K_p_ = sc::get<double>("K_p", params, 1);
      K_v_ = sc::get<double>("K_v", params, 1);
 
